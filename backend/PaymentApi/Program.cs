@@ -2,58 +2,99 @@ using Microsoft.EntityFrameworkCore;
 using PaymentApi.Data;
 using PaymentApi.Options;
 using PaymentApi.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 
+var port = Environment.GetEnvironmentVariable("PORT");
+
+if (!string.IsNullOrWhiteSpace(port))
+{
+    builder.WebHost.UseUrls(
+        $"http://0.0.0.0:{port}"
+    );
+}
+
+// Controllers
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+// OpenAPI
+builder.Services.AddOpenApi();
+
+// iyzico configuration
 builder.Services.Configure<IyzicoOptions>(
     builder.Configuration.GetSection("Iyzico")
 );
 
+// Frontend URL
+// Local: http://localhost:5173
+
+var frontendUrl =
+    builder.Configuration["FrontendUrl"]
+    ?? "http://localhost:5173";
+
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(
+                frontendUrl.TrimEnd('/')
+            )
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
 });
 
-builder.Services.AddScoped<IPaymentService, PaymentService>();
-
-builder.Services.AddScoped<IInstallmentService, InstallmentService>();
-
-
+// Services
 builder.Services.AddScoped<IBinService, BinService>();
 
+builder.Services.AddScoped<
+    IInstallmentService,
+    InstallmentService
+>();
 
+builder.Services.AddScoped<
+    IPaymentService,
+    PaymentService
+>();
 
-
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    )
+// Database
+builder.Services.AddDbContext<AppDbContext>(
+    options =>
+        options.UseSqlite(
+            builder.Configuration
+                .GetConnectionString(
+                    "DefaultConnection"
+                )
+        )
 );
-builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// OpenAPI sadece development ortamında
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
 
-app.UseAuthorization();
+
 app.UseCors("Frontend");
 
+app.UseAuthorization();
+
 app.MapControllers();
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var db =
+        scope.ServiceProvider
+            .GetRequiredService<AppDbContext>();
+
+    db.Database.Migrate();
+}
 
 app.Run();

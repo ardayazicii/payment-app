@@ -1,3 +1,7 @@
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ??
+  'http://localhost:5228'
+
 export interface PaymentRequest {
   amount: number
   cardHolderName: string
@@ -17,7 +21,7 @@ export async function start3dsPayment(
   request: PaymentRequest,
 ): Promise<PaymentStartResponse> {
   const response = await fetch(
-    'http://localhost:5228/api/payments/3ds/start',
+    `${API_BASE_URL}/api/payments/3ds/start`,
     {
       method: 'POST',
       headers: {
@@ -28,10 +32,13 @@ export async function start3dsPayment(
   )
 
   if (!response.ok) {
-    const error = await response.json().catch(() => null)
+    const error = await response
+      .json()
+      .catch(() => null)
 
     throw new Error(
-      error?.message ?? '3D Secure ödeme başlatılamadı.',
+      error?.message ??
+        '3D Secure ödeme başlatılamadı.',
     )
   }
 

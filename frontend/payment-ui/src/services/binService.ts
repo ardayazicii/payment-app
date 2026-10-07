@@ -1,3 +1,7 @@
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ??
+  'http://localhost:5228'
+
 export interface BinInfo {
   bankName: string
   cardAssociation: string
@@ -5,9 +9,11 @@ export interface BinInfo {
   cardFamily: string
 }
 
-export async function lookupBin(bin: string): Promise<BinInfo> {
+export async function lookupBin(
+  bin: string,
+): Promise<BinInfo> {
   const response = await fetch(
-    'http://localhost:5228/api/cards/bin-lookup',
+    `${API_BASE_URL}/api/cards/bin-lookup`,
     {
       method: 'POST',
       headers: {
@@ -18,7 +24,14 @@ export async function lookupBin(bin: string): Promise<BinInfo> {
   )
 
   if (!response.ok) {
-    throw new Error('BIN sorgusu başarısız.')
+    const error = await response
+      .json()
+      .catch(() => null)
+
+    throw new Error(
+      error?.message ??
+        'BIN sorgusu başarısız.',
+    )
   }
 
   return await response.json()

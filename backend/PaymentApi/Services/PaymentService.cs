@@ -172,7 +172,7 @@ public class PaymentService : IPaymentService
                 PaymentGroup.PRODUCT.ToString(),
 
             CallbackUrl =
-                "http://localhost:5228/api/payments/3ds/callback"
+                _settings.CallbackUrl
         };
 
         request.PaymentCard =

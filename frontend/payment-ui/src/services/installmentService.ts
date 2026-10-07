@@ -1,3 +1,7 @@
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ??
+  'http://localhost:5228'
+
 export interface InstallmentOption {
   installmentNumber: number
   installmentPrice: number
@@ -17,7 +21,7 @@ export async function lookupInstallments(
   amount: number,
 ): Promise<InstallmentInfo> {
   const response = await fetch(
-    'http://localhost:5228/api/cards/installments',
+    `${API_BASE_URL}/api/cards/installments`,
     {
       method: 'POST',
       headers: {
@@ -31,10 +35,13 @@ export async function lookupInstallments(
   )
 
   if (!response.ok) {
-    const error = await response.json().catch(() => null)
+    const error = await response
+      .json()
+      .catch(() => null)
 
     throw new Error(
-      error?.message ?? 'Taksit bilgileri alınamadı.',
+      error?.message ??
+        'Taksit bilgileri alınamadı.',
     )
   }
 
